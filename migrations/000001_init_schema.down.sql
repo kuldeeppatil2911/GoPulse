@@ -1,0 +1,5 @@
+DROP TABLE IF EXISTS errors;
+DROP TABLE IF EXISTS request_metrics;
+DROP TABLE IF EXISTS endpoints;
+DROP TABLE IF EXISTS services;
+DROP TABLE IF EXISTS users;

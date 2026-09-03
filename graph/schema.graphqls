@@ -1,0 +1,43 @@
+scalar Time
+
+input TimeRange {
+  start: Time!
+  end: Time!
+}
+
+type ServiceMetrics {
+  totalRequests: Int!
+  requestsPerSecond: Float!
+  averageLatency: Float!
+  p95Latency: Float!
+  p99Latency: Float!
+  errorRate: Float!
+  successRate: Float!
+}
+
+type EndpointPerformance {
+  endpointId: ID!
+  path: String!
+  method: String!
+  totalRequests: Int!
+  averageLatency: Float!
+  errorRate: Float!
+}
+
+type ErrorStatistics {
+  errorCode: String!
+  count: Int!
+  lastOccurred: Time!
+}
+
+type ApiUsage {
+  statusCode: Int!
+  count: Int!
+}
+
+type Query {
+  serviceMetrics(serviceId: ID!, timeRange: TimeRange): ServiceMetrics!
+  endpointPerformance(endpointId: ID!, timeRange: TimeRange): [EndpointPerformance!]!
+  errorStatistics(serviceId: ID!, timeRange: TimeRange): [ErrorStatistics!]!
+  apiUsage(serviceId: ID!, timeRange: TimeRange): [ApiUsage!]!
+}
