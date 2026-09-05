@@ -41,14 +41,41 @@ GoPulse follows a clean architecture pattern separating concerns into handlers, 
 
 ```mermaid
 flowchart TD
-    Client[Client / Agent] --> Gin[Gin Router]
-    Gin --> Middleware[Middleware Layer\n(Auth, Logging, Request ID)]
-    Middleware --> REST[REST Handlers]
-    Middleware --> GQL[GraphQL Handlers]
-    REST --> Service[Service Layer]
-    GQL --> Service
-    Service --> Postgres[(PostgreSQL)]
-    Service --> Redis[(Redis)]
+    subgraph Frontend [Interactive Dashboard]
+        UI[Glassmorphic UI (HTML/JS)]
+        Chart[Chart.js Visualizations]
+        Traffic[Traffic Simulator]
+        UI --> Chart
+        UI --> Traffic
+    end
+
+    subgraph Backend [GoPulse Core Application]
+        Gin[Gin HTTP Router]
+        Middleware[Middleware Layer\n(Auth, Logging, Request ID)]
+        REST[REST Handlers\n(Ingestion & Provisioning)]
+        GQL[GraphQL Handlers\n(Analytics & Data Fetch)]
+        Service[Service Layer\n(Business Logic)]
+        Repo[Repository Layer\n(Data Access)]
+        
+        Gin --> Middleware
+        Middleware --> REST
+        Middleware --> GQL
+        
+        REST --> Service
+        GQL --> Service
+        Service --> Repo
+    end
+
+    subgraph Infrastructure [Data Layer]
+        Postgres[(PostgreSQL\nRelational Data)]
+        Redis[(Redis\nLook-aside Cache)]
+    end
+
+    %% Connections
+    Traffic -- "POST /api/metrics\n(High Throughput)" --> Gin
+    UI -- "POST /graphql\n(Complex Queries)" --> Gin
+    Repo -- "sqlx (Connection Pool)" --> Postgres
+    Repo -- "go-redis" --> Redis
 ```
 
 ## 7. Request Lifecycle Diagram
@@ -80,14 +107,72 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    Ingest(Ingestion API) --> DB(PostgreSQL)
-    DB --> Cache(Redis Cache Layer)
-    Cache --> GQL(GraphQL API)
+    subgraph Data Sources
+        Agent[Backend Services]
+        Sim[Traffic Simulator]
+    end
+    subgraph Ingestion
+        API[REST Ingestion API]
+    end
+    subgraph Storage & Caching
+        DB[(PostgreSQL)]
+        Redis[(Redis Cache)]
+    end
+    subgraph Analytics
+        GQL[GraphQL Engine]
+        Dash[UI Dashboard]
+    end
+
+    Agent -- "Metrics" --> API
+    Sim -- "Mock Metrics" --> API
+    API -- "Write" --> DB
+    DB -- "Calculate Stats" --> Redis
+    Redis -- "Read Stats" --> GQL
+    GQL -- "Render Charts" --> Dash
 ```
 
-## 9. Database Architecture
+## 9. Database Architecture (Entity Relationship)
 
 The schema is normalized for high performance:
+
+```mermaid
+erDiagram
+    users {
+        uuid id PK
+        string username
+        string password_hash
+    }
+    services {
+        uuid id PK
+        string name
+        string api_key
+    }
+    endpoints {
+        uuid id PK
+        uuid service_id FK
+        string path
+        string method
+    }
+    request_metrics {
+        uuid id PK
+        uuid endpoint_id FK
+        float latency_ms
+        int status_code
+        timestamp created_at
+    }
+    errors {
+        uuid id PK
+        uuid service_id FK
+        string error_message
+        string stack_trace
+        timestamp occurred_at
+    }
+
+    services ||--o{ endpoints : "owns"
+    endpoints ||--o{ request_metrics : "receives"
+    services ||--o{ errors : "generates"
+```
+
 - `users`: Dashboard authentication.
 - `services`: Target APIs being monitored (requires API Keys).
 - `endpoints`: Automatically discovered paths.
@@ -165,7 +250,7 @@ GoPulse includes a sleek, glassmorphic UI served directly by the Go backend at `
 4. Run migrations: `make migrate-up`
 5. Start server: `make run`
 
-## 19. Docker Setup
+## 20. Docker Setup
 
 To run everything in Docker:
 ```bash
