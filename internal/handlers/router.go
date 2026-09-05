@@ -42,6 +42,11 @@ func SetupRouter(cfg *config.Config, metricsHandler *MetricsHandler, serviceHand
 		c.JSON(http.StatusOK, gin.H{"status": "READY"})
 	})
 
+	// Redirect root to dashboard
+	r.GET("/", func(c *gin.Context) {
+		c.Redirect(http.StatusTemporaryRedirect, "/dashboard/")
+	})
+
 	// Serve Frontend Dashboard
 	r.Static("/dashboard", "./frontend")
 
