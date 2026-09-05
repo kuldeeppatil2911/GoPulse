@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"gopulse/internal/config"
 	"gopulse/internal/middleware"
@@ -14,6 +15,15 @@ func SetupRouter(cfg *config.Config, metricsHandler *MetricsHandler, serviceHand
 	}
 
 	r := gin.New()
+
+	// CORS config (allow all for dev/demo)
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-API-Key"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
 
 	// Global Middleware
 	r.Use(gin.Recovery())
@@ -31,6 +41,9 @@ func SetupRouter(cfg *config.Config, metricsHandler *MetricsHandler, serviceHand
 		// For simplicity, we just return UP.
 		c.JSON(http.StatusOK, gin.H{"status": "READY"})
 	})
+
+	// Serve Frontend Dashboard
+	r.Static("/dashboard", "./frontend")
 
 	api := r.Group("/api")
 	{

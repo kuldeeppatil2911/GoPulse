@@ -145,10 +145,19 @@ gopulse/
 │   └── errors/          # Custom application errors
 ├── migrations/          # SQL files for schema
 ├── Dockerfile           # Multi-stage build
-└── docker-compose.yml   # Local dev environment
+├── docker-compose.yml   # Local dev environment
+└── frontend/            # Static UI dashboard (HTML, CSS, JS)
 ```
 
-## 18. Local Setup
+## 18. Interactive Frontend Dashboard
+
+GoPulse includes a sleek, glassmorphic UI served directly by the Go backend at `/dashboard`.
+
+- **No frontend frameworks**: Built with Vanilla HTML/JS and Chart.js for speed.
+- **Traffic Simulation**: Test ingestion with the built-in load generator.
+- **Live Graphing**: Automatically queries the GraphQL API to render latency and error rate charts.
+
+## 19. Local Setup
 
 1. Copy `.env.example` to `.env`.
 2. Ensure you have Go 1.22+ installed.
@@ -163,7 +172,7 @@ To run everything in Docker:
 docker compose up --build
 ```
 
-## 20. Future Improvements
+## 21. Future Improvements
 - Add asynchronous metric processing via Kafka/RabbitMQ.
 - Add timeseries optimization to PostgreSQL (e.g., TimescaleDB).
-- Add robust UI dashboard.
+- Add support for exporting metrics to Prometheus.

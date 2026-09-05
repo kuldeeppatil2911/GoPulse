@@ -1,10 +1,26 @@
 $ErrorActionPreference = "Stop"
 
+Write-Host "Cleaning up previous containers and volumes..."
+docker compose down -v
+
 Write-Host "Starting Postgres and Redis..."
 docker compose up -d postgres redis
 
-Write-Host "Waiting for database to be ready..."
-Start-Sleep -Seconds 10
+Write-Host "Waiting for database to be ready (up to 30s)..."
+$ready = $false
+for ($i=1; $i -le 15; $i++) {
+    $status = docker exec $(docker compose ps -q postgres) pg_isready -U gopulse -d gopulse 2>&1
+    if ($status -match "accepting connections") {
+        $ready = $true
+        break
+    }
+    Start-Sleep -Seconds 2
+}
+
+if (-not $ready) {
+    Write-Host "Database failed to start in time!"
+    exit 1
+}
 
 Write-Host "Applying database schema..."
 $sql = Get-Content -Path migrations\000001_init_schema.up.sql -Raw
@@ -15,8 +31,8 @@ go build -o server.exe cmd/server/main.go
 
 Write-Host "Starting GoPulse Server..."
 $env:PORT="8080"
-$env:DATABASE_URL="postgres://gopulse:gopulse_password@localhost:5432/gopulse?sslmode=disable"
-$env:REDIS_URL="redis://localhost:6379/0"
+$env:DATABASE_URL="postgres://gopulse:gopulse_password@127.0.0.1:55432/gopulse?sslmode=disable"
+$env:REDIS_URL="redis://127.0.0.1:16379/0"
 $env:ENVIRONMENT="development"
 $env:LOG_LEVEL="info"
 
