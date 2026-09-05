@@ -22,6 +22,7 @@ RUN apk --no-cache add ca-certificates tzdata
 
 COPY --from=builder /gopulse /app/gopulse
 COPY migrations /app/migrations
+COPY frontend /app/frontend
 
 # Expose port
 EXPOSE 8080
